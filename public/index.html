@@ -29,6 +29,8 @@
     <button type="submit">Add run</button>
   </form>
   <p id="status" class="status" role="status"></p>
+  <label for="vehicle-filter">Filter by vehicle</label>
+  <input id="vehicle-filter" type="search" autocomplete="off">
   <table aria-label="Runs">
     <thead><tr><th>ID</th><th>Vehicle</th><th>Cycle</th><th>CO2 g/km</th><th>Status</th></tr></thead>
     <tbody id="runs"></tbody>
@@ -36,11 +38,19 @@
 <script>
   const tbody = document.getElementById("runs");
   const status = document.getElementById("status");
+  const vehicleFilter = document.getElementById("vehicle-filter");
+  let allRuns = [];
+  function renderRuns() {
+    const query = vehicleFilter.value.trim().toLowerCase();
+    const visibleRuns = allRuns.filter(r => r.vehicleId.toLowerCase().includes(query));
+    tbody.innerHTML = visibleRuns.map(r => `<tr data-run-id="${r.id}"><td>${r.id}</td><td>${r.vehicleId}</td><td>${r.cycle}</td><td>${r.co2GramsPerKm}</td><td>${r.status}</td></tr>`).join("");
+  }
   async function load() {
     const res = await fetch("/api/runs");
-    const runs = await res.json();
-    tbody.innerHTML = runs.map(r => `<tr data-run-id="${r.id}"><td>${r.id}</td><td>${r.vehicleId}</td><td>${r.cycle}</td><td>${r.co2GramsPerKm}</td><td>${r.status}</td></tr>`).join("");
+    allRuns = await res.json();
+    renderRuns();
   }
+  vehicleFilter.addEventListener("input", renderRuns);
   document.getElementById("new-run").addEventListener("submit", async (e) => {
     e.preventDefault();
     const body = {
