@@ -10,10 +10,14 @@ test("user can add a run through the UI", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Measurement Runs" })).toBeVisible();
   const rowsBefore = await page.locator("tbody#runs tr").count();
+  const co2Input = page.getByPlaceholder("CO2 g/km");
+
+  await expect(co2Input).toHaveAttribute("min", "0");
+  await expect(co2Input).toHaveAttribute("max", "500");
 
   await page.getByPlaceholder("Vehicle ID").fill("WVW-E2E1");
   await page.getByLabel("Cycle").selectOption("RDE");
-  await page.getByPlaceholder("CO2 g/km").fill("123.4");
+  await co2Input.fill("123.4");
   await page.getByRole("button", { name: "Add run" }).click();
 
   await expect(page.getByRole("status")).toContainText("Created run-");
