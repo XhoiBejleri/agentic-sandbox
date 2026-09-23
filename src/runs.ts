@@ -49,6 +49,10 @@ export function validateNewRun(input: unknown): NewRun {
 export class RunStore {
   private readonly runs = new Map<string, MeasurementRun>();
   private seq = 0;
+  private readonly allowedStatusTransitions: Partial<Record<RunStatus, RunStatus>> = {
+    planned: "running",
+    running: "done",
+  };
 
   constructor(seed: NewRun[] = []) {
     for (const run of seed) this.create(run);
@@ -61,6 +65,16 @@ export class RunStore {
 
   get(id: string): MeasurementRun | undefined {
     return this.runs.get(id);
+  }
+
+  transitionStatus(id: string, to: string): { run: MeasurementRun; from: RunStatus; allowed: boolean } | undefined {
+    const run = this.runs.get(id);
+    if (!run) return undefined;
+
+    const from = run.status;
+    const allowed = this.allowedStatusTransitions[from] === to;
+    if (allowed) run.status = to as RunStatus;
+    return { run, from, allowed };
   }
 
   create(input: NewRun): MeasurementRun {
