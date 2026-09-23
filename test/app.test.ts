@@ -50,6 +50,34 @@ describe("runs api", () => {
     expect(res.status).toBe(404);
   });
 
+  it("allows planned runs to advance to running and done", async () => {
+    const running = await request(app).patch("/api/runs/run-0001/status").send({ status: "running" });
+    expect(running.status).toBe(200);
+    expect(running.body.status).toBe("running");
+
+    const done = await request(app).patch("/api/runs/run-0001/status").send({ status: "done" });
+    expect(done.status).toBe(200);
+    expect(done.body.status).toBe("done");
+  });
+
+  it("rejects a disallowed status transition with its from and to values", async () => {
+    const res = await request(app).patch("/api/runs/run-0001/status").send({ status: "done" });
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: "invalid transition", from: "planned", to: "done" });
+  });
+
+  it("returns 404 when updating the status of an unknown run", async () => {
+    const res = await request(app).patch("/api/runs/run-9999/status").send({ status: "running" });
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: "run not found", id: "run-9999" });
+  });
+
+  it("rejects a missing status as invalid input", async () => {
+    const res = await request(app).patch("/api/runs/run-0001/status").send({});
+    expect(res.status).toBe(400);
+    expect(res.body.details).toContain("status must be a non-empty string");
+  });
+
   it("creates a run", async () => {
     const res = await request(app)
       .post("/api/runs")
